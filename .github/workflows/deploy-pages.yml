@@ -1,0 +1,65 @@
+name: Publicar quiz de Indaiatuba
+
+on: workflow_dispatch
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pages-indaiatuba
+  cancel-in-progress: false
+
+jobs:
+  build:
+    if: github.repository == 'jonathanmainel/funil-de-vendas-indaiatuba' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: indaiatuba-build
+    steps:
+      - name: Obter código desta execução
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+
+      - name: Preparar Node.js
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Instalar e testar a base
+        run: |
+          npm ci
+          npm test
+          npm test -- --mode indaiatuba
+
+      - name: Gerar somente Indaiatuba
+        # Fornecer neste environment os valores confirmados, sem herdar configurações de Ribeirão.
+        # INDAIATUBA_PRIVACY_URL continua obrigatória, inclusive na prévia para o cliente.
+        # O .env.local não é versionado: configurar as três entradas no environment de destino.
+        # Secret evita exposição casual em configuração/logs, mas a URL será pública no bundle.
+        # Nunca fornecer chave de CRM, token de API ou senha em VITE_*.
+        env:
+          VITE_MAKE_WEBHOOK_URL: ${{ secrets.INDAIATUBA_MAKE_WEBHOOK_URL }}
+          VITE_META_PIXEL_ID: ${{ vars.INDAIATUBA_META_PIXEL_ID }}
+          VITE_PRIVACY_URL: ${{ vars.INDAIATUBA_PRIVACY_URL }}
+        run: npm run build:indaiatuba
+
+      - name: Preparar artefato de Indaiatuba
+        uses: actions/upload-pages-artifact@7b1f4a764d45c48632c6b24a0339c27f5614fb0b # v4
+        with:
+          path: dist-units/indaiatuba
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Publicar somente o Pages deste repositório
+        id: deployment
+        uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # v4
