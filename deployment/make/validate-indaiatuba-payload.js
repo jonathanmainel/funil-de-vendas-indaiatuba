@@ -1,5 +1,9 @@
 // Referência local para o recebimento no Make. Não está instalada em serviço externo.
 // Retorna somente nomes de campos inválidos, sem registrar dados pessoais.
+import { indaiatubaAnswerFields } from "../../src/data/questionCatalog.js";
+
+const requiredAnswers = indaiatubaAnswerFields.filter(({ id }) => id !== "role" && id !== "crm_usage");
+
 export function validateIndaiatubaPayload(payload) {
   if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
     return { valid: false, invalidFields: ["body"] };
@@ -24,13 +28,9 @@ export function validateIndaiatubaPayload(payload) {
   oneOf("unit", ["Indaiatuba"]);
   oneOf("consent_accepted", ["true"]);
   oneOf("consent_text_version", ["v1"]);
-  oneOf("declared_bottleneck", ["prospecting", "process_indicators", "predictability", "negotiation", "lost_opportunities", "followup", "conversion", "team"]);
-  oneOf("team_size", ["one_two", "three_five", "six_ten", "more_ten"]);
-  oneOf("process", ["documented", "partial", "individual", "unclear"]);
-  oneOf("goals", ["action_plan", "sometimes", "final_target", "no_plan"]);
-  oneOf("followup", ["routine", "partial", "memory", "unreliable"]);
-  oneOf("insight_timing", ["during_month", "meetings", "near_close", "after_result"]);
-  oneOf("timeline", ["now", "thirty_days", "ninety_days", "evaluating"]);
+  for (const { field, answers, legacyAnswers } of requiredAnswers) {
+    oneOf(field, [...answers, ...legacyAnswers].flatMap(({ value, label }) => [value, label]));
+  }
   for (const key of ["score_method", "score_planning", "score_execution", "score_management"]) oneOf(key, ["0", "1", "2", "3"]);
   oneOf("dominant_bottleneck", ["method", "planning", "execution", "management"]);
   oneOf("priority", ["high", "medium", "low"]);

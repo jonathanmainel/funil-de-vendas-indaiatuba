@@ -19,6 +19,19 @@ describe("contrato de recebimento a configurar no Make", () => {
   it.each(["prospecting", "process_indicators", "predictability", "negotiation", "lost_opportunities", "followup", "conversion", "team"])("aceita identificador atual ou histórico %s", value => {
     expect(validateIndaiatubaPayload({ ...payload, declared_bottleneck: value }).valid).toBe(true);
   });
+  it("aceita os textos apresentados por Indaiatuba sem os opcionais históricos", () => {
+    const { role, crm_usage, score_technology, ...current } = payload;
+    expect(validateIndaiatubaPayload({
+      ...current,
+      declared_bottleneck: "Prospecção",
+      team_size: "Três a cinco",
+      process: "Está parcialmente definido",
+      goals: "Isso acontece parcialmente",
+      followup: "Existe uma rotina definida e realmente é executada",
+      insight_timing: "Em reuniões periódicas",
+      timeline: "Agora",
+    })).toEqual({ valid: true, invalidFields: [] });
+  });
 
   it.each([
     ["unit", "Ribeirão Preto"], ["consent_accepted", "false"], ["declared_bottleneck", "unknown"],

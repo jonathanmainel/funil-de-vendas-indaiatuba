@@ -48,7 +48,7 @@ describe("isolamento da fila de Indaiatuba", () => {
     expect(request).toHaveBeenCalledTimes(1);
     const body = request.mock.calls[0][1].body;
     expect(body.get("unit")).toBe("Indaiatuba");
-    expect(body.get("declared_bottleneck")).toBe("followup");
+    expect(body.get("declared_bottleneck")).toBe("Acompanhamento");
     expect(body.get("submission_id")).toBe("qa-id");
     expect(JSON.parse(storage.get(key))).toEqual([foreign]);
   });

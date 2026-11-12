@@ -1,4 +1,5 @@
 import { unit } from "../config/unit";
+import { indaiatubaAnswerFields } from "../data/questionCatalog";
 
 const makeWebhookUrl = import.meta.env.VITE_MAKE_WEBHOOK_URL?.trim();
 const demoStorageKey = unit.storage.demo;
@@ -18,6 +19,10 @@ function writeList(key, value) {
 
 function createId() {
   return globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random()}`;
+}
+
+function isMissing(value) {
+  return value == null || value === "" || value === "undefined";
 }
 
 function toMakePayload(payload) {
@@ -56,6 +61,23 @@ function toMakePayload(payload) {
     page_url: payload.pageUrl,
     ...payload.attribution,
   };
+
+  if (unit.id === "indaiatuba") {
+    for (const { id, field, answers, legacyAnswers } of indaiatubaAnswerFields) {
+      const storedAnswer = payload.quiz.answers[id];
+      if (isMissing(storedAnswer)) {
+        delete values[field];
+        continue;
+      }
+      const option = answers.find(({ value }) => value === storedAnswer)
+        ?? legacyAnswers.find(({ value }) => value === storedAnswer);
+      values[field] = option?.label ?? storedAnswer;
+    }
+
+    if (isMissing(payload.quiz.scores.technology)) {
+      delete values.score_technology;
+    }
+  }
 
   return new URLSearchParams(values);
 }
